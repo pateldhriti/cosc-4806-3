@@ -1,81 +1,58 @@
 <?php
 
 class User {
-
     public $username;
     public $password;
     public $auth = false;
 
     public function __construct() {}
 
-    public function test() {
+    public function create($username, $password) {
         $db = db_connect();
-        $statement = $db->prepare("SELECT * FROM users;");
-        $statement->execute();
-        $rows = $statement->fetch(PDO::FETCH_ASSOC);
-        return $rows;
+        $stmt = $db->prepare("SELECT * FROM users WHERE username = :username");
+        $stmt->execute(['username' => $username]);
+        if ($stmt->rowCount() > 0) {
+            return "Username already exists.";
+        }
+        $hashed = password_hash($password, PASSWORD_DEFAULT);
+        $insert = $db->prepare("INSERT INTO users (username, password) VALUES (:username, :password)");
+        return $insert->execute(['username' => $username, 'password' => $hashed]);
     }
 
     public function authenticate($username, $password) {
-        $username = strtolower($username);
         $db = db_connect();
+        $username = strtolower(trim($username));
 
-        if (!$db) {
-            die("❌ DB connect failed");
+        // Check lockout
+        $stmt = $db->prepare("SELECT * FROM log WHERE username = :username AND attempt = 'bad' ORDER BY timestamp DESC LIMIT 3");
+        $stmt->execute(['username' => $username]);
+        $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (count($attempts) == 3) {
+            $lastAttemptTime = strtotime($attempts[0]['timestamp']);
+            if (time() - $lastAttemptTime < 60) {
+                return "⏳ Locked for 60 seconds due to too many failed logins.";
+            }
         }
 
-        $stmt = $db->prepare("SELECT * FROM users WHERE username = :name");
-        $stmt->bindValue(':name', $username);
-        $stmt->execute();
+        $stmt = $db->prepare("SELECT * FROM users WHERE username = :username");
+        $stmt->execute(['username' => $username]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        echo "Entered password: $password<br>";
-        echo "Stored hash: " . $user['password'] . "<br>";
-
         if ($user && password_verify($password, $user['password'])) {
-            echo "✅ Password match!";
+            $this->log_attempt($username, 'good');
+            $_SESSION['auth'] = true;
+            $_SESSION['username'] = $username;
+            return true;
         } else {
-            echo "❌ Incorrect password!";
-        }
-        die;
-    }
-    private function handle_failed_login() {
-        if (isset($_SESSION['failedAuth'])) {
-            $_SESSION['failedAuth']++;
-        } else {
-            $_SESSION['failedAuth'] = 1;
-        }
-
-        if ($_SESSION['failedAuth'] >= 3) {
-            $_SESSION['lockout_time'] = time() + 60; // lockout for 60 seconds
+            $this->log_attempt($username, 'bad');
+            return false;
         }
     }
 
     private function log_attempt($username, $result) {
         $db = db_connect();
-        $stmt = $db->prepare("INSERT INTO log (username, attempt, timestamp) VALUES (:username, :attempt, NOW())");
-        $stmt->bindValue(':username', $username);
-        $stmt->bindValue(':attempt', $result); // 'good' or 'bad'
-        $stmt->execute();
-    }
-
-    public function create_user($username, $password) {
-        $db = db_connect();
-
-        $stmt = $db->prepare("SELECT * FROM users WHERE username = :username");
-        $stmt->bindValue(':username', $username);
-        $stmt->execute();
-
-        if ($stmt->rowCount() > 0) {
-            return "⚠️ Username already exists.";
-        }
-
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $db->prepare("INSERT INTO users (username, password) VALUES (:username, :password)");
-        $stmt->bindValue(':username', $username);
-        $stmt->bindValue(':password', $hashed_password);
-        $stmt->execute();
-
-        return true;
+        $stmt = $db->prepare("INSERT INTO log (username, attempt) VALUES (:username, :result)");
+        $stmt->execute(['username' => $username, 'result' => $result]);
     }
 }

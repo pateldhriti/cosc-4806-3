@@ -2,43 +2,47 @@
 
 class Login extends Controller {
 
-    public function index() {		
+		public function index() {
+				$this->view('login/index');
+		}
 
-	    $this->view('login/index');
-    }
-    
-	 public function verify() {
-			 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-					 $username = trim($_POST['username'] ?? '');
-					 $password = trim($_POST['password'] ?? '');
+		public function check() {
+				if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+						$user = $this->model('User');  // ✅ FIXED: loads app/models/User.php
+						$username = $_POST['username'];
+						$password = $_POST['password'];
 
-					 if ($username && $password) {
-							 $user = $this->model('User');
+						$auth = $user->authenticate($username, $password);
 
-							 // ✅ Debugging output to verify values
-							 echo "Entered password: " . $password . "<br>";
+						if ($auth === true) {
+								header("Location: /home");
+						} else {
+								$error = is_string($auth) ? $auth : "❌ Invalid credentials.";
+								$this->view('login/index', ['error' => $error]);
+						}
+				}
+		}
 
-							 // Grab stored hash to double-check
-							 $db = db_connect();
-							 $stmt = $db->prepare("SELECT password FROM users WHERE username = :username");
-							 $stmt->bindValue(':username', $username);
-							 $stmt->execute();
-							 $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-							 if ($row) {
-									 echo "Stored hash: " . $row['password'] . "<br>";
-									 var_dump(password_verify($password, $row['password']));
-							 } else {
-									 echo "❌ User not found.";
-							 }
+		public function create() {
+				$this->view('create/index');
+		}
 
-							 die(); // Stop for debug
-					 } else {
-							 echo "⚠️ Username and password are required.";
-					 }
-			 } else {
-					 header("Location: /login");
-					 exit;
-			 }
-	 }
+		public function store() {
+				if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+						$user = $this->model('User'); 
+
+						$result = $user->create($_POST['username'], $_POST['password']);
+						if ($result === true) {
+								header("Location: /login");
+						} else {
+								$this->view('create/index', ['error' => $result]);
+						}
+				}
+		}
+
+		public function logout() {
+				session_destroy();
+				header("Location: /login");
+		}
 }
