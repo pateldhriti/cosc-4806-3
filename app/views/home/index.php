@@ -1,4 +1,8 @@
-<?php require_once 'app/views/templates/header.php' ?>
+<?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+require_once 'app/views/templates/header.php'; 
+?>
 <div class="container">
     <div class="page-header" id="banner">
         <div class="row">
