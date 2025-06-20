@@ -1,5 +1,6 @@
 <?php
 
+
 class User {
 
     public $username;
@@ -25,12 +26,15 @@ class User {
          */
 		$username = strtolower($username);
 		$db = db_connect();
+      if (!$db) {
+        die("❌ db_connect() failed. Check database.php and DB_PASS secret.");
+        }
         $statement = $db->prepare("select * from users WHERE username = :name;");
         $statement->bindValue(':name', $username);
         $statement->execute();
         $rows = $statement->fetch(PDO::FETCH_ASSOC);
 		
-		if (password_verify($password, $rows['password'])) {
+		if ($rows && password_verify($password, $rows['password'])) {
 			$_SESSION['auth'] = 1;
 			$_SESSION['username'] = ucwords($username);
 			unset($_SESSION['failedAuth']);
