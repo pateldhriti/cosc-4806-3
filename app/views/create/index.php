@@ -1,22 +1,15 @@
-<?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-require_once 'app/views/templates/header.php'; 
-?>
-<div class="container">
-    <div class="page-header" id="banner">
-        <div class="row">
-            <div class="col-lg-12">
-                <h1>Hey</h1>
-                <p class="lead"> <?= date("F jS, Y"); ?></p>
-            </div>
-        </div>
-    </div>
+<?php require_once 'app/views/templates/header.php'; ?>
 
-    <div class="row">
-        <div class="col-lg-12">
-            <p> <a href="/logout">Click here to logout</a></p>
-        </div>
-    </div>
+<h2>Create an Account</h2>
 
-    <?php require_once 'app/views/templates/footer.php' ?>
+<form action="/create/register" method="post">
+    <label>Username:</label>
+    <input type="text" name="username" required><br><br>
+
+    <label>Password:</label>
+    <input type="password" name="password" required><br><br>
+
+    <button type="submit">Register</button>
+</form>
+
+<?php require_once 'app/views/templates/footer.php'; ?>
