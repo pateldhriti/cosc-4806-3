@@ -8,7 +8,7 @@ class Login extends Controller {
 
 		public function check() {
 				if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-						$user = $this->model('User');  // ✅ FIXED: loads app/models/User.php
+						$user = $this->model('User');  
 						$username = $_POST['username'];
 						$password = $_POST['password'];
 
@@ -16,6 +16,7 @@ class Login extends Controller {
 
 						if ($auth === true) {
 								header("Location: /home");
+							exit();
 						} else {
 								$error = is_string($auth) ? $auth : "❌ Invalid credentials.";
 								$this->view('login/index', ['error' => $error]);
