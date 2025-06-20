@@ -3,6 +3,7 @@
 class Login extends Controller {
 
     public function index() {		
+			echo 1; die;
 	    $this->view('login/index');
     }
     
