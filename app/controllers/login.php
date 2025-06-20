@@ -3,13 +3,15 @@
 class Login extends Controller {
 
     public function index() {		
-			echo 1; die;
+
 	    $this->view('login/index');
     }
     
     public function verify(){
 			$username = $_REQUEST['username'];
 			$password = $_REQUEST['password'];
+
+			echo $username; die;
 		
 			$user = $this->model('User');
 			$user->authenticate($username, $password); 
