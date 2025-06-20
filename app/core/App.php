@@ -21,8 +21,8 @@ class App {
          * if not, then go to this->controller which is defaulted to home 
          */
 
-        if (file_exists('app/controllers/' . $url[1] . '.php')) {
-            $this->controller = $url[1];
+        if (isset($url[1]) && file_exists('app/controllers/' . $url[1] . '.php')) {
+        $this->controller = $url[1];
 
             $_SESSION['controller'] = $this->controller;
 
@@ -36,10 +36,12 @@ class App {
             }
             unset($url[1]);
         } else {
-            header('Location: /home');
-            die;
-        }
-
+            if (!isset($_SESSION['auth'])) {
+                    $this->controller = 'login';
+                } else {
+                    $this->controller = 'home';
+                }
+            }
         require_once 'app/controllers/' . $this->controller . '.php';
 
         $this->controller = new $this->controller;
